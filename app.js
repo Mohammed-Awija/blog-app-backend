@@ -1,5 +1,6 @@
 const express = require('express')
 const { default: mongoose } = require('mongoose')
+const userRouter = require('./routes/user')
 const app = express()
 require('dotenv').config()
 
@@ -15,6 +16,7 @@ const mainRoute = require('./routes/main')
 
 
 app.use('/api/v1', mainRoute)
+app.use('/api/user', userRouter)
 
 const start = async () => {
     try {
