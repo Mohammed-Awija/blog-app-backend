@@ -5,7 +5,6 @@ const userSchema = new mongoose.Schema({
     username: {
         type: String,
         required: true,
-        unique: true,
     },
     email: {
         type: String, 
@@ -20,7 +19,7 @@ const userSchema = new mongoose.Schema({
 })
 
 //static signup method
-userSchema.statics.signup = async function(email, password, username){
+userSchema.statics.signup = async function(username, email, password){
     if(!email || !password || !username){
         throw Error('All fields must be filled!!!')
     }
