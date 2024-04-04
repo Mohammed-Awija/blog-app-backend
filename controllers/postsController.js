@@ -29,22 +29,37 @@ const createPost = async (req, res) => {
 
 const editPost = async (req, res) => {
     try {
-        const {id} = req.params
-        const post = await Post.findByIdAndUpdate({_id: id}, req.body,{
-            new: true, 
-            runValidators: true,
-        } )
+        const {id} = req.params 
+        const userId = req.user._id
+        const post = await Post.findById({_id: id})
+        if(!post){
+            return res.status(400).json({msg: "Post not found"})
+        }
+        if(userId != post.userId){
+            return res.status(400).json({msg: "This is not your post"})
+        }
+        post.set(req.body)
+        await post.save()
         res.status(200).json({post})
     } catch (error) {
         console.log(error)
     }
-}
+} 
 
 const deletePost = async (req, res) => {
     try {
-        const {id} = req.params
-        const post = await Post.findByIdAndDelete({_id: id})
-        res.status(200).json({post})
+        const {id} = req.params 
+        const userId = req.user._id
+        const post = await Post.findById({_id: id})
+        if(!post){
+            return res.status(400).json({msg: "Post not found"})
+        }
+        if(userId != post.userId){
+            return res.status(400).json({msg: "This is not your post"})
+        }
+        const deletedPost = await Post.findByIdAndDelete({_id: id})
+        res.status(200).json({deletedPost})
+
     } catch (error) {
         console.log(error) 
     }
@@ -62,7 +77,7 @@ const likePost = async (req, res) => {
             post.likes.push(username)
         }
         await post.save()
-        res.status(200).json(`${post.likes.length} people liked this post`)
+        res.status(200).json(`${post.likes} liked this post`)
     } catch (error) {
         console.log(error)
     }
