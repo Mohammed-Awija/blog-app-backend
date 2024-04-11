@@ -8,7 +8,7 @@ const { getPosts, createPost, editPost, deletePost, likePost} = require('../cont
 //posts route
 router.route('/').get(getPosts)
 
-//require auth
+//require auth 
 router.use(requireAuth)
 
 router.route('/create-post').post(createPost)

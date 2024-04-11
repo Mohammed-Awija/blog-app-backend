@@ -6,20 +6,24 @@ const getPosts = async (req, res) => {
     try {
         const post = await Post.find({}).sort({createdAt: -1})
         res.status(200).json({ post })
-    } catch (error) {
+    } catch (error) { 
         console.log(error)
     }
 }
  
 const createPost = async (req, res) => {
-    try {
+    try { 
         const {title, description } = req.body
         const {_id, username} = req.user
+        const user = await User.findById(_id)
+        if(!user){
+            return res.status(404).json({error: "User not found!!!"})
+        }
         const createdPost = await Post.create({
             userId: _id, 
             createdBy: username,
-            title,
-            description
+            title, 
+            description  
         })
         res.status(200).json(createdPost)
     } catch (error) { 
@@ -40,7 +44,7 @@ const editPost = async (req, res) => {
         }
         post.set(req.body)
         await post.save()
-        res.status(200).json({post})
+        res.status(200).json(post)
     } catch (error) {
         console.log(error)
     }
@@ -58,7 +62,7 @@ const deletePost = async (req, res) => {
             return res.status(400).json({msg: "This is not your post"})
         }
         const deletedPost = await Post.findByIdAndDelete({_id: id})
-        res.status(200).json({deletedPost})
+        res.status(200).json(deletedPost)
 
     } catch (error) {
         console.log(error) 
