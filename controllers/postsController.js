@@ -29,7 +29,7 @@ const createPost = async (req, res) => {
     } catch (error) { 
         console.log(error)
     }
-}
+} 
 
 const editPost = async (req, res) => {
     try {
@@ -42,7 +42,7 @@ const editPost = async (req, res) => {
         if(userId != post.userId){
             return res.status(400).json({msg: "This is not your post"})
         }
-        post.set(req.body)
+        post.set(req.body) 
         await post.save()
         res.status(200).json(post)
     } catch (error) {
@@ -81,7 +81,21 @@ const likePost = async (req, res) => {
             post.likes.push(username)
         }
         await post.save()
-        res.status(200).json(`${post.likes} liked this post`)
+        res.status(200).json(post)
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+const commentPost = async (req, res) => {
+    try {
+        const {id} = req.params
+        const post = await Post.findById({_id: id})
+        const {username} = req.user
+        const {comment} = req.body
+        post.comments.push(`${username}: ${comment}`)
+        await post.save()
+        res.status(200).json(post)
     } catch (error) {
         console.log(error)
     }
@@ -94,6 +108,7 @@ module.exports = {
     editPost,
     deletePost,
     likePost,
+    commentPost
 }
 
 

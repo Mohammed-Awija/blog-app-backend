@@ -20,7 +20,9 @@ const postSchema = new mongoose.Schema({
     },
     likes: {
         type: Array,
-
+    },
+    comments: {
+        type: Array
     }
 }, {timestamps: true})
 
