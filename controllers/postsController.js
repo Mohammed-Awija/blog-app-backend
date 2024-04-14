@@ -1,16 +1,16 @@
 const Post = require('../models/postModel')
 const User = require('../models/userModel')
-
-
+   
+ 
 const getPosts = async (req, res) => {
     try {
         const post = await Post.find({}).sort({createdAt: -1})
         res.status(200).json({ post })
-    } catch (error) { 
-        console.log(error)
-    }
-}
- 
+    } catch (error) {   
+        console.log(error) 
+    } 
+}     
+   
 const createPost = async (req, res) => {
     try { 
         const {title, description } = req.body
@@ -33,16 +33,19 @@ const createPost = async (req, res) => {
 
 const editPost = async (req, res) => {
     try {
-        const {id} = req.params 
+        const {id} = req.params
         const userId = req.user._id
-        const post = await Post.findById({_id: id})
+        if(!userId){
+            throw Error("userId not found!!!!") 
+        }
+        const post = await Post.findById(id)
         if(!post){
             return res.status(400).json({msg: "Post not found"})
         }
         if(userId != post.userId){
             return res.status(400).json({msg: "This is not your post"})
         }
-        post.set(req.body) 
+        post.set(req.body)  
         await post.save()
         res.status(200).json(post)
     } catch (error) {
@@ -54,7 +57,7 @@ const deletePost = async (req, res) => {
     try {
         const {id} = req.params 
         const userId = req.user._id
-        const post = await Post.findById({_id: id})
+        const post = await Post.findById(id)
         if(!post){
             return res.status(400).json({msg: "Post not found"})
         }
@@ -73,7 +76,7 @@ const deletePost = async (req, res) => {
 const likePost = async (req, res) => {
     try {
         const {id} = req.params
-        const post = await Post.findById({_id: id})
+        const post = await Post.findById(id)
         const {username} = req.user
         if(post.likes.includes(username)){
             post.likes = post.likes.filter(user => user !== username)
@@ -88,18 +91,42 @@ const likePost = async (req, res) => {
 }
 
 const commentPost = async (req, res) => {
-    try {
+    try { 
         const {id} = req.params
-        const post = await Post.findById({_id: id})
+        const post = await Post.findById(id)
         const {username} = req.user
         const {comment} = req.body
-        post.comments.push(`${username}: ${comment}`)
-        await post.save()
+        const newComment = {
+            comment: comment,
+            createdBy: username
+        } 
+        post.comments.push(newComment)
+        await post.save() 
         res.status(200).json(post)
     } catch (error) {
         console.log(error)
     }
 }
+
+const replyPost = async (req, res) => {
+    try {
+        const {postId, commentId} = req.params
+        const post = await Post.findById({_id: postId})
+        const comment = post.comments.find(com => com._id.toString() === commentId)
+        const {username} = req.user
+        const {reply} = req.body
+        const newReply = {
+            reply: reply,
+            createdBy: username
+        }
+        comment.replies.push(newReply) 
+        await post.save() 
+        res.status(200).json(post)
+    } catch (error) {
+        console.log(error)
+    }
+}
+
 
 
 module.exports = {
@@ -108,7 +135,8 @@ module.exports = {
     editPost,
     deletePost,
     likePost,
-    commentPost
+    commentPost,
+    replyPost
 }
 
 

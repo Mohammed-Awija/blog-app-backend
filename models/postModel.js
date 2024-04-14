@@ -1,6 +1,29 @@
 const mongoose = require('mongoose')
 
 
+
+
+const repliesSchema = new mongoose.Schema({
+    createdBy: {
+        type: String,
+    }, 
+    reply: { 
+        type: String,
+    },
+}, {timestamps: true})
+
+
+const commentsSchema = new mongoose.Schema({
+    createdBy: {
+        type: String,
+    },
+    comment: { 
+        type: String,
+    },
+    replies: [repliesSchema]
+
+}, {timestamps: true})
+
 const postSchema = new mongoose.Schema({
     userId: {
         type: String,
@@ -15,16 +38,18 @@ const postSchema = new mongoose.Schema({
         required: true,
     },
     description: {
-        type: String,
+        type: String, 
         required: true,
     },
     likes: {
         type: Array,
     },
-    comments: {
-        type: Array
-    }
+    comments: [commentsSchema],
+
 }, {timestamps: true})
+
+
+
 
 
 module.exports = mongoose.model('Post', postSchema)
