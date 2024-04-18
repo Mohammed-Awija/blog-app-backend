@@ -1,30 +1,57 @@
 const Post = require('../models/postModel')
 const User = require('../models/userModel')
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3')
+
+const bucketName = process.env.BUCKET_NAME
+const bucketRegion = process.env.BUCKET_REGION
+const accessKey = process.env.ACCESS_KEY
+const secretAccessKey = process.env.SECRET_ACCESS_KEY
+
+const s3 = new S3Client({
+    credentials: {
+        accessKeyId: accessKey,
+        secretAccessKey: secretAccessKey,
+    },
+    region: bucketRegion
+})
+
    
  
 const getPosts = async (req, res) => {
     try {
-        const post = await Post.find({}).sort({createdAt: -1})
-        res.status(200).json({ post })
+        const post = await Post.find({}).sort({createdAt: -1}) 
+        res.status(200).json({ post }) 
     } catch (error) {   
         console.log(error) 
-    } 
+    }  
 }     
-   
+
 const createPost = async (req, res) => {
     try { 
+        req.file.buffer
+        const params = {
+            Bucket: bucketName,
+            Key: `user: ${req.user._id} image: ${req.file.originalname}`,
+            Body: req.file.buffer,
+            ContentType: req.file.mimetype, 
+        }
+        const command = new PutObjectCommand(params)
+        await s3.send(command)
+
         const {title, description } = req.body
         const {_id, username} = req.user
         const user = await User.findById(_id)
         if(!user){
             return res.status(404).json({error: "User not found!!!"})
         }
+        
         const createdPost = await Post.create({
             userId: _id, 
             createdBy: username,
             title, 
             description  
         })
+
         res.status(200).json(createdPost)
     } catch (error) { 
         console.log(error)
@@ -34,7 +61,7 @@ const createPost = async (req, res) => {
 const editPost = async (req, res) => {
     try {
         const {id} = req.params
-        const userId = req.user._id
+        const userId = req.user._id 
         if(!userId){
             throw Error("userId not found!!!!") 
         }
