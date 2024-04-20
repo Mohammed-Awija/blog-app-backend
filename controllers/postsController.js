@@ -1,11 +1,15 @@
 const Post = require('../models/postModel')
 const User = require('../models/userModel')
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3')
-
+const crypto = require('crypto')
+const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3')
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner')
 const bucketName = process.env.BUCKET_NAME
 const bucketRegion = process.env.BUCKET_REGION
 const accessKey = process.env.ACCESS_KEY
 const secretAccessKey = process.env.SECRET_ACCESS_KEY
+
+
+
 
 const s3 = new S3Client({
     credentials: {
@@ -28,10 +32,18 @@ const getPosts = async (req, res) => {
 
 const createPost = async (req, res) => {
     try { 
-        req.file.buffer
+        const imageName = crypto.randomBytes(32).toString('hex')
+        const getSignedUrlParams = {
+            Bucket: bucketName,
+            Key: imageName
+        }
+        //create image URL
+        const getSignedUrlCommand = new GetObjectCommand(getSignedUrlParams)
+        const imageUrl = await getSignedUrl(s3, getSignedUrlCommand, {expiresIn: 3600}) //you can add {expiresIn: 3600}
+
         const params = {
             Bucket: bucketName,
-            Key: `user: ${req.user._id} image: ${req.file.originalname}`,
+            Key: imageName,
             Body: req.file.buffer,
             ContentType: req.file.mimetype, 
         }
@@ -49,7 +61,9 @@ const createPost = async (req, res) => {
             userId: _id, 
             createdBy: username,
             title, 
-            description  
+            description,
+            imageName: imageName,
+            imageUrl: imageUrl
         })
 
         res.status(200).json(createdPost)
@@ -72,6 +86,15 @@ const editPost = async (req, res) => {
         if(userId != post.userId){
             return res.status(400).json({msg: "This is not your post"})
         }
+        const params = {
+            Bucket: bucketName,
+            Key: post.imageName,
+            Body: req.file.buffer,
+            ContentType: req.file.mimetype, 
+        }
+        const command = new PutObjectCommand(params)
+        await s3.send(command) 
+
         post.set(req.body)  
         await post.save()
         res.status(200).json(post)
@@ -91,8 +114,16 @@ const deletePost = async (req, res) => {
         if(userId != post.userId){
             return res.status(400).json({msg: "This is not your post"})
         }
-        const deletedPost = await Post.findByIdAndDelete({_id: id})
-        res.status(200).json(deletedPost)
+        const params = {
+            Bucket: bucketName,
+            Key: post.imageName
+        }
+        const deleteImageCommand = new DeleteObjectCommand(params);
+        await s3.send(deleteImageCommand);
+
+        // Delete the post from the database
+        const deletedPost = await Post.findByIdAndDelete(id);
+        res.status(200).json(deletedPost);
 
     } catch (error) {
         console.log(error) 
