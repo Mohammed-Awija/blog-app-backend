@@ -12,11 +12,15 @@ const requireAuth = async (req, res, next) => {
     }
      
     const token = authentication.split(' ')[1]
-        const {_id} = jwt.verify(token, process.env.SECRET)
-        req.user = await User.findOne({_id}).select('_id username')
-        next()
+    const decodedToken = jwt.verify(token, process.env.SECRET)
+    const {_id} = decodedToken
+    req.user = await User.findOne({_id}).select('_id username')
+    next()
     } catch (error) {
-        console.log('error')
+        if(error.name === 'TokenExpiredError'){
+            return res.status(401).json({ error: 'Token expired' });
+        }
+        console.log( error)
     }
 }
 
