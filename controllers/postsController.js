@@ -39,7 +39,7 @@ const createPost = async (req, res) => {
         }
         //create image URL
         const getSignedUrlCommand = new GetObjectCommand(getSignedUrlParams)
-        const imageUrl = await getSignedUrl(s3, getSignedUrlCommand) //you can add {expiresIn: 3600}
+        const imageUrl = await getSignedUrl(s3, getSignedUrlCommand, {expiresIn: 3600}) //you can add {expiresIn: 3600}
 
         const params = {
             Bucket: bucketName,
