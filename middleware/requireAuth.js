@@ -9,7 +9,7 @@ const requireAuth = async (req, res, next) => {
 
     if(!authentication){
         return res.status(401).json({error: 'Authorization token required'})
-    }
+    } 
      
     const token = authentication.split(' ')[1]
     const decodedToken = jwt.verify(token, process.env.SECRET)

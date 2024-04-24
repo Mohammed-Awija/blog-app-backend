@@ -2,7 +2,6 @@ const Post = require('../models/postModel')
 const User = require('../models/userModel')
 const crypto = require('crypto')
 const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3')
-const { getSignedUrl } = require('@aws-sdk/s3-request-presigner')
 const bucketName = process.env.BUCKET_NAME
 const bucketRegion = process.env.BUCKET_REGION
 const accessKey = process.env.ACCESS_KEY
@@ -38,8 +37,8 @@ const createPost = async (req, res) => {
             Key: imageName
         }
         //create image URL
-        const getSignedUrlCommand = new GetObjectCommand(getSignedUrlParams)
-        const imageUrl = await getSignedUrl(s3, getSignedUrlCommand, {expiresIn: 3600}) //you can add {expiresIn: 3600}
+        //const getSignedUrlCommand = new GetObjectCommand(getSignedUrlParams) //await getSignedUrl(s3, getSignedUrlCommand) //you can add {expiresIn: 3600}
+        const imageUrl = `https://${bucketName}.s3.amazonaws.com/${imageName}` 
 
         const params = {
             Bucket: bucketName,
@@ -86,16 +85,21 @@ const editPost = async (req, res) => {
         if(userId != post.userId){
             return res.status(400).json({msg: "This is not your post"})
         }
-        const params = {
-            Bucket: bucketName,
-            Key: post.imageName,
-            Body: req.file.buffer,
-            ContentType: req.file.mimetype, 
+        if (req.file && req.file.buffer) {
+            const params = {
+                Bucket: bucketName,
+                Key: post.imageName,
+                Body: req.file.buffer,
+                ContentType: req.file.mimetype,  
+            } 
+            const command = new PutObjectCommand(params)
+            await s3.send(command)  
         }
-        const command = new PutObjectCommand(params)
-        await s3.send(command) 
-
-        post.set(req.body)  
+        const {title, description } = req.body
+        post.set({
+            title: title,
+            description: description
+        })  
         await post.save()
         res.status(200).json(post)
     } catch (error) {
